@@ -9,30 +9,33 @@ from copy import copy
 class FCI:
 
     def __init__(self, K, N, h, V):
-
-        for spin in range(2):
-            KcN[spin] = comb(K, N[spin], exact=True) 
-
-        H = np.zeros((KcNa*KcNb, KcNa*KcNb))
+        self.N = N
         self.K = K
         self.h = h
         self.V = V
 
-        self.back_string = reversed(range(K))
-
-
         KcN = [0,0]
+        for spin in range(2):
+            KcN[spin] = comb(K, N[spin], exact=True) 
+
+        KcN2 = KcN[0] * KcN[1]
+        H = np.zeros((KcN2, KcN2))
+
+        #self.back_string = reversed(range(K)) #right now need to keep recreating iterator in exciteString
+
+        string_list = [[],[]] #a list of 2 empty lists
         for spin in range(2):
             next_excitation = np.zeros(K)
             next_excitation[:N[spin]] = 1
-            string_list[spin] = [next_excitation]
             for i in range(KcN[spin]):
                 print("iteration: ", i)
-                next_excitation = self.exciteString(next_excitation, self.Na)
-                a_string_list.append(next_excitation)
+                string_list[spin].append(next_excitation) #append before excitation to include ground state
+                next_excitation = self.exciteString(next_excitation, self.N[spin])
 
-        print(a_string_list)
-
+        for i in range(KcN2):
+            for j in range(i+1):
+                H[i,j] = compareString(i,j)
+                H[j,i] = H[i,j]
 
     def exciteString(self, string, N):
         next_string = copy(string)
@@ -78,15 +81,32 @@ class FCI:
         elif len(excitation_index) == 0:
             return evalEnergy(string1)
 
-    def doubleExcitation(self, 
+    def doubleExcitation(self):
+        pass
 
 
 
 
-
-        return next_string
+        #return next_string
 
 
 if __name__ == "__main__":
-#    jim = FCI(4, 2, 2, h=1, V=1)
-    bob = FCI(6, 3, 3, h=1, V=1)
+    bob = FCI(6, [3,3], h=1, V=1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
