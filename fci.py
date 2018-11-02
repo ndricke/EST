@@ -16,7 +16,7 @@ class FCI:
 
         KcN = [0,0]
         for spin in range(2):
-            KcN[spin] = comb(K, N[spin], exact=True) 
+            KcN[spin] = comb(K, N[spin], exact=True)
 
         KcN2 = KcN[0] * KcN[1]
         H = np.zeros((KcN2, KcN2))
@@ -32,9 +32,10 @@ class FCI:
                 string_list[spin].append(next_excitation) #append before excitation to include ground state
                 next_excitation = self.exciteString(next_excitation, self.N[spin])
 
+
         for i in range(KcN2):
             for j in range(i+1):
-                H[i,j] = compareString(i,j)
+                H[i,j] = self.compareString(i,j)
                 H[j,i] = H[i,j]
 
     def exciteString(self, string, N):
@@ -49,7 +50,7 @@ class FCI:
             next_string[rightmost_1] = 0
             next_string[rightmost_1+1] = 1
             return next_string
-            
+
         else:
             print("Hit the top!")
             #if the highest 1 is at the top, look for the highest 0
@@ -68,9 +69,13 @@ class FCI:
             return next_string
 
     def compareString(self, string1_index, string2_index):
-        truth_arr = np.equal(string1, string2)
+
         ##Compare to see how many excitations are conserved
-        excitation_index = [i for i, b in enumerate(truth_arr) if b == False]
+        ##this unfortunately doesn't track which orbitals were excited from and two, which is necessary
+        #truth_arr = np.equal(string1, string2)
+        #excitation_index = [i for i, b in enumerate(truth_arr) if b == False]
+
+        
 
         if len(excitation_index) > 2:
             return 0
@@ -92,21 +97,3 @@ class FCI:
 
 if __name__ == "__main__":
     bob = FCI(6, [3,3], h=1, V=1)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
