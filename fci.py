@@ -2,6 +2,7 @@ import numpy as np
 from scipy.special import comb
 from itertools import dropwhile
 from copy import copy
+import sys
 """
 1. Need to implement this to work properly over both spins
 2. Create direct product of alpha and beta spin determinants to make full determinant space
@@ -14,24 +15,28 @@ class FCI:
         self.h = h
         self.V = V
 
-        KcN = [0,0]
+        self.KcN = [0,0]
         for spin in range(2):
-            KcN[spin] = comb(K, N[spin], exact=True)
+            self.KcN[spin] = comb(K, N[spin], exact=True)
 
-        KcN2 = KcN[0] * KcN[1]
+        KcN2 = self.KcN[0] * self.KcN[1]
         H = np.zeros((KcN2, KcN2))
 
         #self.back_string = reversed(range(K)) #right now need to keep recreating iterator in exciteString
 
         string_list = [[],[]] #a list of 2 empty lists
         for spin in range(2):
-            next_excitation = np.zeros(K)
+            next_excitation = np.zeros(K, dtype=int)
             next_excitation[:N[spin]] = 1
-            for i in range(KcN[spin]):
+            for i in range(self.KcN[spin]):
                 print("iteration: ", i)
                 string_list[spin].append(next_excitation) #append before excitation to include ground state
                 next_excitation = self.exciteString(next_excitation, self.N[spin])
 
+        print(string_list)
+        print(len(string_list))
+        print(len(string_list[0]))
+        sys.exit(-1)
 
         for i in range(KcN2):
             for j in range(i+1):
@@ -68,23 +73,48 @@ class FCI:
             next_string[next_1+1: next_1+1+self.K-rightmost_0] = 1
             return next_string
 
-    def compareString(self, string1_index, string2_index):
+    def calcStringdex(self, i):
+        return i//self.KcN[spin], i % self.KcN[spin]
 
-        ##Compare to see how many excitations are conserved
-        ##this unfortunately doesn't track which orbitals were excited from and two, which is necessary
-        #truth_arr = np.equal(string1, string2)
-        #excitation_index = [i for i, b in enumerate(truth_arr) if b == False]
+    def excitOperators(self, str_1, str_2):
+        """
 
-        
+        ----
+        returns:
+            lowering_dex : (int) index for lowering operator
+            raising_dex : (int) index for raising operator
+        """
+        str_dif_a = str_1a - str_2a
+        lowering_dex = np.where(str_dif_a == 1)[0]
+        raising_dex = np.where(str_dif_a == -1)[0]
+        return lowering_dex, raising_dex
 
-        if len(excitation_index) > 2:
-            return 0
-        elif len(excitation_index) == 2:
-            return doubleExcitation(excitation_index)
-        elif len(excitation_index) == 1:
-            return singleExcitation(excitation_index)
-        elif len(excitation_index) == 0:
-            return evalEnergy(string1)
+    def compareString(self, stringdex_1, stringdex_2):
+
+        str_ind_1a, str_ind_1b = self.calcStringdex(stringdex_1)
+        str_ind_2a, str_ind_2b = self.calcStringdex(stringdex_2)
+        str_1a, str_1b = string_list[str_ind_1a], string_list[str_ind_1b]
+        str_2a, str_2b = string_list[str_ind_2a], string_list[str_ind_2b]
+
+        al_a, ar_a = self.excitOperators(str_1a, str_2a)
+        al_b, ar_b = self.excitOperators(str_1b, str_2b)
+
+        excit_count = len(al_a) + len(al_b) #number of excitations between alpha and beta strings
+        if excit_count > 2:
+            return 0.0
+        elif excit_count == 2:
+            return self.doubleExcitation(al_a, al_b, ar_a, ar_b, str_1a, str_1b, str_2a, str_2b)
+        elif excit_count == 1:
+            return self.singleExcitation(al_a, al_b, ar_a, ar_b, str_1a, str_1b, str_2a, str_2b)
+        elif excit_count == 0:
+            return self.evalEnergy(str_1a, str_1b)
+        else:
+            raise ValueError("Excitation count is not a whole number")
+
+    def evalEnergy(self, string_a, string_b):
+
+
+    def singleExcitation(self, str_1a, str_1b, str_2a, str_2b):
 
     def doubleExcitation(self):
         pass
