@@ -3,6 +3,7 @@ from scipy.special import comb
 from itertools import dropwhile
 from copy import copy
 import sys
+import itertools
 
 from embed import c1c2
 """
@@ -22,7 +23,7 @@ class FCI:
             self.KcN[spin] = comb(K, N[spin], exact=True)
 
         KcN2 = self.KcN[0] * self.KcN[1]
-        H = np.zeros((KcN2, KcN2))
+        self.H = np.zeros((KcN2, KcN2))
 
         #self.back_string = reversed(range(K)) #right now need to keep recreating iterator in exciteString
 
@@ -46,10 +47,10 @@ class FCI:
 
         for i in range(KcN2):
             for j in range(i+1):
-                H[i,j] = self.compareString(i,j)
-                H[j,i] = H[i,j]
+                self.H[i,j] = self.compareString(i,j)
+                self.H[j,i] = self.H[i,j]
 
-        print(H)
+        print(self.H)
 
     def exciteString(self, string, N):
         next_string = copy(string)
@@ -144,8 +145,8 @@ class FCI:
         E = 0.0
         E += self.h[credes_op[0][0], credes_op[0][1]] #only one 1-particle term
 
-        m = credes_op[0]  #creation operator
-        p = credes_op[1]  #destruction operator
+        m = credes_op[0][0]  #creation operator
+        p = credes_op[0][1]  #destruction operator
         for n in occ_ind_1: ## check: is this correct given each string has different occupations?
             E += self.V[m,p,n,n] - self.V[m,n,n,p]
         return E
@@ -156,16 +157,27 @@ class FCI:
         n = credes_op[0][1]
         p = credes_op[1][0]
         q = credes_op[1][1]
-        return V[m,p,n,q] - V[m,q,n,p]
+        return self.V[m,p,n,q] - self.V[m,q,n,p]
 
 
 
 
 
 if __name__ == "__main__":
-    n = 6
+    K = 6
     U = 2.0
     na, nb = 3, 3
 
-    h, V = c1c2.hubb(n, U, pbc=True)
-    fci_6 = FCI(n, [na,nb], h=h, V=V)
+    h, V = c1c2.hubb(K, U, pbc=True)
+    V_u = np.zeros((2*K,2*K,2*K,2*K))
+    V_u[:K,:K,:K,:K] = V
+    V_u[K:,K:,:K,:K] = V
+    V_u[:K,:K,K:,K:] = V
+    V_u[K:,K:,K:,K:] = V
+    h_u = np.zeros((2*K,2*K))
+    h_u[:K,:K] = h
+    h_u[K:,K:] = h
+    fci_6 = FCI(K, [na,nb], h=h_u, V=V_u)
+    print(np.linalg.norm(fci_6.H-fci_6.H.T))
+    e_val, e_vec = np.linalg.eigh(fci_6.H)
+    print(e_val[:10])
